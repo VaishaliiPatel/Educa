@@ -1,0 +1,30 @@
+  Future<FileSystemEntity> getThumbnail(document) async {
+    // for thumbnail from video_thumbnail
+
+    final thumbnail = await VideoThumbnail.thumbnailFile(
+      video: document,
+      thumbnailPath: _tempDir,
+    );
+    final file = File(thumbnail);
+    filePath = file.path;
+    //--------
+    //   final Directory dir = await getApplicationDocumentsDirectory();
+    //   final String path = '${dir.path}/media';
+    //   final myDir = Directory(path);
+
+    //   List<FileSystemEntity> _images;
+
+    //   _images = myDir.listSync(recursive: true, followLinks: false);
+    //   _images.sort((a, b) {
+    //     return b.path.compareTo(a.path);
+    //   });
+    //   var lastFile = _images[0];
+    //   var extension = path.endsWith(lastFile.path);
+    //   if (extension == '.jpeg') {
+    //     return lastFile;
+    //   } else {
+    //     String thumb = await Thumbnails.getThumbnail(
+    //         videoFile: lastFile.path, imageType: ThumbFormat.PNG, quality: 30);
+    //     return File(thumb);
+    //   }
+  }

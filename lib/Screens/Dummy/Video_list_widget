@@ -1,0 +1,196 @@
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+
+class VideoListWidget extends StatefulWidget {
+  VideoListWidget({Key key}) : super(key: key);
+  @override
+  _VideoListWidgetState createState() => _VideoListWidgetState();
+}
+
+class _VideoListWidgetState extends State<VideoListWidget> {
+  VideoPlayerController _videoPlayerController;
+  Future<QuerySnapshot> _future;
+
+  var videoList;
+  String _tempDir;
+  String filePath;
+
+  @override
+  void initState() {
+    _future = Firestore.instance
+        .collection('video/KNkZltLvbGjRJ9Y0vNcl/videoDetail')
+        .orderBy('timeStamp', descending: true)
+        .getDocuments();
+    // _chewieController = ChewieController(
+    //     videoPlayerController: _videoPlayerController,
+    //     aspectRatio: 1.2,
+    //     autoInitialize: true,
+    //     looping: true,
+    //     errorBuilder: (ctx, message) {
+    //       return Center(
+    //         child: Text(
+    //           message,
+    //           style: TextStyle(color: Colors.white),
+    //         ),
+    //       );
+    //     });
+    super.initState();
+  }
+
+  void onClickVideo(int index, String data) {
+    if (_videoPlayerController.value.isPlaying) {
+      // _videoPlayerController = VideoPlayerController.network(data);
+      // _videoPlayerController.initialize();
+      _videoPlayerController.pause();
+      print("in play-----------");
+    } else {
+      _videoPlayerController = VideoPlayerController.network(data);
+
+      _videoPlayerController.initialize();
+      _videoPlayerController.play();
+      print("in paush---------");
+    }
+  }
+
+  Future<FileSystemEntity> getThumbnail(document) async {
+    // for thumbnail from video_thumbnail
+
+    final thumbnail = await VideoThumbnail.thumbnailFile(
+      video: document,
+      thumbnailPath: _tempDir,
+    );
+    final file = File(thumbnail);
+    filePath = file.path;
+    //--------
+    //   final Directory dir = await getApplicationDocumentsDirectory();
+    //   final String path = '${dir.path}/media';
+    //   final myDir = Directory(path);
+
+    //   List<FileSystemEntity> _images;
+
+    //   _images = myDir.listSync(recursive: true, followLinks: false);
+    //   _images.sort((a, b) {
+    //     return b.path.compareTo(a.path);
+    //   });
+    //   var lastFile = _images[0];
+    //   var extension = path.endsWith(lastFile.path);
+    //   if (extension == '.jpeg') {
+    //     return lastFile;
+    //   } else {
+    //     String thumb = await Thumbnails.getThumbnail(
+    //         videoFile: lastFile.path, imageType: ThumbFormat.PNG, quality: 30);
+    //     return File(thumb);
+    //   }
+  }
+
+  @override
+  void dispose() {
+    _videoPlayerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        height: 350,
+        child: FutureBuilder(
+            future: _future,
+            builder: (ctx, futureSnapShot) {
+              if (futureSnapShot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+              return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: futureSnapShot.data.documents.length,
+                  itemBuilder: (ctx, index) {
+                    print("data----------" +
+                        futureSnapShot.data.documents[index]['videoPath']);
+                    _videoPlayerController = VideoPlayerController.network(
+                      futureSnapShot.data.documents[index]['videoPath'],
+                    );
+                    _videoPlayerController.initialize();
+                    videoList = futureSnapShot.data.documents;
+                    getThumbnail(
+                        futureSnapShot.data.documents[index]['videoPath']);
+                    // _videoPlayerController.setLooping(true);
+                    return Container(
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      // height: 300,
+                      // padding: EdgeInsets.all(10),
+                      margin: EdgeInsets.only(top: 5, bottom: 10, right: 15),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: () => onClickVideo(
+                              index,
+                              futureSnapShot.data.documents[index]['videoPath'],
+                            ),
+                            child: Container(
+                              // child: filePath != null
+                              //     ? Image(image: AssetImage(filePath))
+                              //     : Text('No Floatting Button Click')
+                              child: AspectRatio(
+                                aspectRatio: 1.2,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(20.0),
+                                    topRight: Radius.circular(20.0),
+                                  ),
+                                  child: VideoPlayer(_videoPlayerController),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 20,
+                          ),
+                          Container(
+                            margin: EdgeInsets.only(left: 20, right: 10),
+                            child: Text(
+                              futureSnapShot.data.documents[index]['topic'],
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Container(
+                            margin: EdgeInsets.only(left: 20, right: 10),
+                            child: Text(
+                              futureSnapShot.data.documents[index]['title'],
+                              maxLines: 3,
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 15,
+                          ),
+                        ],
+                      ),
+                    );
+                  });
+            })
+        // }
+        );
+  }
+}
